@@ -4,6 +4,7 @@ const bootcamps = require("./routes/bootcamps");
 const morgan = require('morgan');
 const connectDB = require('./config/database');
 const colors = require('colors');
+const errorHandler = require('./middlewares/error');
 
 //  configure dotenv
 dotenv.config({ path: './config/config.env' });
@@ -23,7 +24,11 @@ if(process.env.NODE_ENV === 'development') {
 }
 
 //  goto bootcamps route
-app.use('/api/v1/bootcamps', bootcamps)
+app.use('/api/v1/bootcamps', bootcamps);
+
+
+// handle errors using middleware
+app.use(errorHandler);
 
 //  post number
 const PORT = process.env.PORT || 5000;
