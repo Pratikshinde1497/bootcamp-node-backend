@@ -7,16 +7,17 @@ const ErrorResponce = require('../utils/errorResponce');
 exports.getBootcamps = async (req, res, next) => {
   try {
     const bootcamps = await Bootcamp.find();
-    res.status(200).json({
-      success: true,
-      count: bootcamps.length,
-      data: bootcamps
-    })
+    if (!bootcamps) {
+      next(new ErrorResponce(`no bootcamps found`, 404))
+    } else {
+      res.status(200).json({
+        success: true,
+        count: bootcamps.length,
+        data: bootcamps
+      })
+    }
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error
-    })
+    next(error);
   }
 }
 
@@ -26,12 +27,17 @@ exports.getBootcamps = async (req, res, next) => {
 exports.getBootcamp = async (req, res, next) => {
   try {
     const bootcamp = await Bootcamp.findById(req.params.id);
-    res.status(200).json({
-      success: true,
-      data: bootcamp
-    })
+    if(!bootcamp) {
+      next(new ErrorResponce(`no bootcamp found`, 404))
+    }
+    else {
+      res.status(200).json({
+        success: true,
+        data: bootcamp
+      })
+    }
   } catch (error) {
-    next(new ErrorResponce(`bootcamp not found with id ${req.params.id}`, 404));
+    next(error);
   }
 }
 
@@ -46,7 +52,7 @@ exports.pushBootcamp = async (req, res, next) => {
       data: bootcamp
     })
   } catch (error) {
-    next(new ErrorResponce(`bootcamp not created`, 400));
+    next(error);
   }
 }
 
@@ -66,7 +72,7 @@ exports.updateBootcamp = async (req, res, next) => {
       })
     }
   } catch (error) {
-    next(new ErrorResponce(`bootcamp not updated`, 400));
+    next(error);
   }
 }
 
@@ -86,7 +92,7 @@ exports.deleteBootcamp = async (req, res, next) => {
       })
     }
   } catch (error) {
-    next(new ErrorResponce(`bootcamp not deleted`, 400));
+    next(error);
   }
 }
 
