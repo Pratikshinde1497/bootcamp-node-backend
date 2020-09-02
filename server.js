@@ -14,6 +14,9 @@ connectDB();
 //  instantiate express
 const app = express();
 
+//  use body parser to get data laying in request
+app.use(express.json());
+
 //  use morgan only if we are running in development mode
 if(process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'))
