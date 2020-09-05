@@ -19,30 +19,30 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
   let queryStr = JSON.stringify(reqQuery);
   queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match=> `$${match}`);
   //  get resources from db
-  query = await Bootcamp.find(JSON.parse(queryStr));
+  query = Bootcamp.find(JSON.parse(queryStr)).populate('courses');
 
   //  select: fields
   if (req.query.select) {
     selectedFields = req.query.select.replace(/,/g, ' ');
-    query = await Bootcamp.find(JSON.parse(queryStr)).select(selectedFields);
+    query = query.select(selectedFields);
   }
 
   //  sort: data
   if (req.query.sort) {
     sortingFields = req.query.sort.replace(/,/g, ' ');
-    query = await Bootcamp.find(JSON.parse(queryStr)).select(selectedFields).sort(sortingFields);
+    query = query.sort(sortingFields);
   }
   else 
-    query = await Bootcamp.find(JSON.parse(queryStr)).select(selectedFields).sort('-createdAt');
+    query = query.sort('-createdAt');
 
   //  Pagination
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 20; 
   const startIndex = (page-1) * limit;
   const endIndex = page * limit;
-  const total = await Bootcamp.countDocuments();
+  const total = Bootcamp.countDocuments();
 
-  query = await Bootcamp.find(JSON.parse(queryStr)).select(selectedFields).sort(sortingFields).skip(startIndex).limit(limit);
+  query = query.skip(startIndex).limit(limit);
 
   const bootcamps = await query;
   if (!bootcamps) {

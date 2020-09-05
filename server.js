@@ -1,6 +1,9 @@
 const express = require("express");
 const dotenv = require("dotenv");
+
 const bootcamps = require("./routes/bootcamps");
+const courses = require("./routes/courses");
+
 const morgan = require('morgan');
 const connectDB = require('./config/database');
 const colors = require('colors');
@@ -23,9 +26,9 @@ if(process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'))
 }
 
-//  goto bootcamps route
+//  load routes
 app.use('/api/v1/bootcamps', bootcamps);
-
+app.use('/api/v1/courses', courses);
 
 // handle errors using middleware
 app.use(errorHandler);
