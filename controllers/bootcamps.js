@@ -5,14 +5,14 @@ const GeoCoder = require('../utils/geoCoder');
 
 // @desc      Get all bootcamps
 // @route     GET /api/v1/bootcamps
-// @access    Pubic
+// @access    Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
     res.status(200).json(res.advancedResponce);
 })
 
 // @desc      Get a bootcamp
 // @route     GET /api/v1/bootcamps/:id
-// @access    Pubic
+// @access    Public
 exports.getBootcamp = asyncHandler(async (req, res, next) => {
     const bootcamp = await Bootcamp.findById(req.params.id);
     if(!bootcamp) {
@@ -72,7 +72,7 @@ exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
 
 // @desc      Get bootcamps within radius
 // @route     GET /api/v1/bootcamps/radius/:zipcode/:distance
-// @access    Private
+// @access    Public
 exports.getBootcampsByRadius = asyncHandler(async (req, res, next)  => {
   const { zipcode, distance } = req.params;
 
@@ -100,4 +100,3 @@ exports.getBootcampsByRadius = asyncHandler(async (req, res, next)  => {
     data: Bootcamps
   })
 })
-

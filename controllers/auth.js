@@ -54,3 +54,15 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
     token
   })
 })
+
+// @desc      Get loggedIn user
+// @route     GET /api/v1/auth/me
+// @access    Public
+exports.getMe = asyncHandler(async (req, res, next) => {
+  const user = await req.user
+
+  res.status(200).json({
+    success: true,
+    data: user
+  })
+})
