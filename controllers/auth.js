@@ -12,7 +12,11 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
     password,
     role
   });
+
+  const token = user.getSignedJWTToken();
+
   res.status(200).json({
     success: true,
+    token
   })
 })
