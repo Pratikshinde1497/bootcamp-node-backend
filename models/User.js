@@ -39,7 +39,6 @@ const UserSchema = new mongoose.Schema({
 UserSchema.pre('save', async function(next) {
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next()
 })
 
 //  Add Method which will give us the jwt signed token
@@ -49,6 +48,11 @@ UserSchema.methods.getSignedJWTToken = function() {
     process.env.JWT_SECRET, 
     { expiresIn: process.env.JWT_EXPIRE }
     );
+}
+
+//  add method to compare passwords
+UserSchema.methods.matchPassword = async function(givenPass) {
+  return await bcrypt.compare(givenPass, this.password);
 }
 
 module.exports = mongoose.model('User', UserSchema);
