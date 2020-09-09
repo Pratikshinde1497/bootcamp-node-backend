@@ -51,20 +51,15 @@ exports.updateBootcamp = asyncHandler(async (req, res, next) => {
 
   //  check if bootcamp user, is the one who is making changes 
   if (bootcamp.user != req.user.id && req.user.role !== 'admin')  {
-    return next(new ErrorResponce(`not authorized for manupulation of resource`, 403));
+    return next(new ErrorResponce(`${req.user.name} not authorized to update bootcamp: ${bootcamp.id}`, 403));
   }
 
-  //  apply changes
-  const updated = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true});
-  if (!updated) {
-    return next(new ErrorResponce(`sorry, unable to update bootcamp: ${req.params.id}`, 404));
-  }
-  else {
-    res.status(200).json({
-      success: true,
-      data: updated
-    })
-  }
+  //  update
+  const updated = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true});  
+  res.status(200).json({
+    success: true,
+    data: updated
+  })
 })
 
 // @desc      Delete a bootcamp
@@ -79,21 +74,15 @@ exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
 
   //  check if bootcamp user, is the one who is making changes 
   if (bootcamp.user != req.user.id && req.user.role !== 'admin')  {
-    return next(new ErrorResponce(`not authorized for manupulation of resource`, 403));
+    return next(new ErrorResponce(`${req.user.name} not authorized delete bootcamp: ${bootcamp.id}`, 403));
   }
 
   //  apply changes
-  const deleted = await Bootcamp.findById(req.params.id);
-    if (!deleted) {
-      return next(new ErrorResponce(`sorry, unable to delete bootcamp: ${req.params.id}`, 404));
-    }
-    else {
-      deleted.remove();
-      res.status(200).json({
-        success: true,
-        data: deleted
-      })
-    }
+  await bootcamp.remove();
+  res.status(200).json({
+    success: true,
+    data: {}
+  })
 })
 
 // @desc      Get bootcamps within radius

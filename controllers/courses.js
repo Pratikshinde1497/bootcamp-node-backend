@@ -55,9 +55,9 @@ exports.addCourse = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponce(`No bootcamp found the id: ${req.params.bootcampId}`));
   }
 
-  //  allow anly if user is bootcamp owner || admin
+  //  allow only if user is bootcamp owner || admin
   if (bootcamp.user != req.user.id && req.user.role !== "admin") {
-    return next(new ErrorResponce(`${req.user.name} not authorized to add course in bootcamp: ${bootcamp.name}`, 403));
+    return next(new ErrorResponce(`${req.user.name} not authorized to add course in bootcamp: ${bootcamp.id}`, 403));
   }
 
   //  add course
@@ -74,15 +74,22 @@ exports.addCourse = asyncHandler(async (req, res, next) => {
 exports.updateCourse = asyncHandler(async (req, res, next) => {
   
   const course = await Course.findById(req.params.id);
+  //  not found
   if (!course) {
-    next(new ErrorResponce(`No Course found with id: ${req.params.id}`));
-  } else {
-    const updated = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true});
-    res.status(200).json({
-      success: true,
-      data: updated
-    })
+    return next(new ErrorResponce(`No Course found with id: ${req.params.id}`, 404));
+  } 
+  
+  //  allow only if user is course owner || admin
+  if (course.user != req.user.id && req.user.role !== "admin") {
+    return next(new ErrorResponce(`${req.user.name} not authorized to update course: ${course.id}`, 403));
   }
+
+  //  update
+  const updated = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true});
+  res.status(200).json({
+    success: true,
+    data: updated
+  })
 })
 
 // @desc      Delete course
@@ -91,13 +98,20 @@ exports.updateCourse = asyncHandler(async (req, res, next) => {
 exports.deleteCourse = asyncHandler(async (req, res, next) => {
   
   const course = await Course.findById(req.params.id);
+  //  not found
   if (!course) {
-    next(new ErrorResponce(`No Course found with id: ${req.params.id}`));
-  } else {
-    await Course.findByIdAndDelete(req.params.id);
-    res.status(200).json({
-      success: true,
-      data: {}
-    })
+    return next(new ErrorResponce(`No Course found with id: ${req.params.id}`, 404));
+  } 
+  
+  //  allow only if user is course owner || admin
+  if (course.user != req.user.id && req.user.role !== "admin") {
+    return next(new ErrorResponce(`${req.user.name} not authorized to delete course: ${course.id}`, 403));
   }
+
+  // delete
+  await Course.findByIdAndDelete(req.params.id);
+  res.status(200).json({
+    success: true,
+    data: {}
+  })
 })
