@@ -30,36 +30,62 @@ exports.getBootcamp = asyncHandler(async (req, res, next) => {
 // @route     POST /api/v1/bootcamps
 // @access    Private
 exports.pushBootcamp = asyncHandler(async (req, res, next) => {
-    const bootcamp = await Bootcamp.create(req.body);
-    res.status(201).json({
-      success: true,
-      data: bootcamp
-    })
+  req.body.user = req.user.id;
+  const bootcamp = await Bootcamp.create(req.body);
+  
+  res.status(201).json({
+    success: true,
+    data: bootcamp
+  })
 })
 
 // @desc      Update a bootcamp
 // @route     PUT /api/v1/bootcamps/:id
 // @access    Private
 exports.updateBootcamp = asyncHandler(async (req, res, next) => {
-    const updated = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true});
-    if (!updated) {    
-      next(new ErrorResponce(`bootcamp not found with id: ${req.params.id}`, 404));
-    }
-    else {
-      res.status(200).json({
-        success: true,
-        data: updated
-      })
-    }
+  
+  //  check for the bootcamp
+  const bootcamp = await Bootcamp.findById(req.params.id);
+  if(!bootcamp)
+    return next(new ErrorResponce(`bootcamp not found with id: ${req.params.id}`, 404));
+
+  //  check if bootcamp user, is the one who is making changes 
+  if (bootcamp.user != req.user.id && req.user.role !== 'admin')  {
+    return next(new ErrorResponce(`not authorized for manupulation of resource`, 403));
+  }
+
+  //  apply changes
+  const updated = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true});
+  if (!updated) {
+    return next(new ErrorResponce(`sorry, unable to update bootcamp: ${req.params.id}`, 404));
+  }
+  else {
+    res.status(200).json({
+      success: true,
+      data: updated
+    })
+  }
 })
 
 // @desc      Delete a bootcamp
 // @route     DELETE /api/v1/bootcamps/:id
 // @access    Private
 exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
-    const deleted = await Bootcamp.findById(req.params.id);
+    
+  //  check for the bootcamp
+  const bootcamp = await Bootcamp.findById(req.params.id);
+  if(!bootcamp)
+    return next(new ErrorResponce(`bootcamp not found with id: ${req.params.id}`, 404));
+
+  //  check if bootcamp user, is the one who is making changes 
+  if (bootcamp.user != req.user.id && req.user.role !== 'admin')  {
+    return next(new ErrorResponce(`not authorized for manupulation of resource`, 403));
+  }
+
+  //  apply changes
+  const deleted = await Bootcamp.findById(req.params.id);
     if (!deleted) {
-      next(new ErrorResponce(`bootcamp not found with id: ${req.params.id}`, 404));
+      return next(new ErrorResponce(`sorry, unable to delete bootcamp: ${req.params.id}`, 404));
     }
     else {
       deleted.remove();

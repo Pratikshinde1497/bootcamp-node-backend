@@ -46,18 +46,26 @@ exports.getCourse = asyncHandler(async (req, res, next) => {
 exports.addCourse = asyncHandler(async (req, res, next) => {
 
   req.body.bootcamp = req.params.bootcampId;
+  req.body.user = req.user.id;
 
-  const bootcamp = Bootcamp.findById(req.params.bootcampId);
+  const bootcamp = await Bootcamp.findById(req.params.bootcampId);
+  
+  //  if not found
   if (!bootcamp) {
-    next(new ErrorResponce(`No bootcamp found the id: ${req.params.bootcampId}`))
+    return next(new ErrorResponce(`No bootcamp found the id: ${req.params.bootcampId}`));
   }
-  else{
-    const course = await Course.create(req.body);
-    res.status(200).json({
-      success: true,
-      data: course
-    })
+
+  //  allow anly if user is bootcamp owner || admin
+  if (bootcamp.user != req.user.id && req.user.role !== "admin") {
+    return next(new ErrorResponce(`${req.user.name} not authorized to add course in bootcamp: ${bootcamp.name}`, 403));
   }
+
+  //  add course
+  const course = await Course.create(req.body);
+  res.status(200).json({
+    success: true,
+    data: course
+  })
 })
 
 // @desc      Update course
