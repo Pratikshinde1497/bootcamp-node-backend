@@ -24,24 +24,20 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
 // @access    Public
 exports.loginUser = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
-  
   //  if no data provided
   if(!email || !password) {
     return next(new ErrorResponce(`please provide an email and password`, 400));
   }
-
   //  check user
   const user = await User.findOne({ email }).select('+password');
   if(!user) {
     return next(new ErrorResponce(`Invalid Credentials`, 401));
   }
-
   //  check if password matches
   const isMatch = await user.matchPassword(password);
   if(!isMatch) {
     return next(new ErrorResponce(`Invalid Credentials`, 401));
   }
-
   //  give response
   sendResponse(user, 200, res);
 })
@@ -56,6 +52,46 @@ exports.getMe = asyncHandler(async (req, res, next) => {
     success: true,
     data: user
   })
+})
+
+// @desc      Update user details
+// @route     PUT /api/v1/auth/updatedetails
+// @access    Private
+exports.updateDetails = asyncHandler(async (req, res, next) => {
+  //  get data to update from body
+  const updateFields = {
+    email: req.body.email,
+    name: req.body.name
+  }
+  //  make changes in db
+  const user = await User.findByIdAndUpdate(req.user.id, updateFields, { validateBeforeSave: true, new: true});
+  if(!user) {
+    return next(new ErrorResponce(`no user found with id: ${req.user.id}`, 400));
+  }
+  
+  res.status(200).json({
+    success: true,
+    data: user
+  })
+})
+
+// @desc      Update user password
+// @route     PUT /api/v1/auth/updatepassword
+// @access    Private
+exports.updatePassword = asyncHandler(async (req, res, next) => {
+  //  get user details
+  const user = await User.findById(req.user.id).select('+password');
+  if(!user) {
+    return next(new ErrorResponce(`no user found with id: ${req.user.id}`, 400));
+  }
+  if(!(await user.matchPassword(req.body.currentPassword))) {
+    return next(new ErrorResponce(`Invalid credentials`, 400));
+  }
+  user.password = req.body.newPassword;
+  //  save new password
+  await user.save({validateBeforeSave: true});
+
+  sendResponse(user, 200, res);
 })
 
 // @desc      Forgot password
@@ -97,27 +133,6 @@ exports.forgotpassword = asyncHandler(async (req, res, next) => {
   }
 })
 
-//  helper function that gets token from model and give it to user through json() + cookie
-const sendResponse = (user, statusCode, res) => {
-  //  get Token
-  const token = user.getSignedJWTToken();
-  //  set cookie options
-  const options = {
-    expires: new Date( Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
-    httpOnly: true
-  }
-  if(process.env.NODE_ENV === 'production') {
-    options.secure = true
-  }
-  //  send response
-  res
-    .status(statusCode)
-    .cookie('token', token, options)
-    .json({
-      success: true,
-      token
-  })
-}
 
 // @desc      Reset Password
 // @route     GET /api/v1/auth/resetpassword/:resettoken
@@ -143,3 +158,25 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
 
   sendResponse(user, 200, res);
 })
+
+// @desc      Helper function to send response
+const sendResponse = (user, statusCode, res) => {
+  //  get Token
+  const token = user.getSignedJWTToken();
+  //  set cookie options
+  const options = {
+    expires: new Date( Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
+    httpOnly: true
+  }
+  if(process.env.NODE_ENV === 'production') {
+    options.secure = true
+  }
+  //  send response
+  res
+    .status(statusCode)
+    .cookie('token', token, options)
+    .json({
+      success: true,
+      token
+  })
+}
