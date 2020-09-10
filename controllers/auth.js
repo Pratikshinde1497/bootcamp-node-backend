@@ -1,4 +1,5 @@
 const asyncHandler = require("../middlewares/async");
+const crypto = require('crypto');
 const ErrorResponce = require('../utils/errorResponce');
 const User = require('../models/User');
 
@@ -14,13 +15,8 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
     role
   });
 
-  //  get Token
-  const token = user.getSignedJWTToken();
-
-  res.status(200).json({
-    success: true,
-    token
-  })
+  //  give response
+  sendResponse(user, 200, res);
 })
 
 // @desc      Login user
@@ -46,18 +42,13 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponce(`Invalid Credentials`, 401));
   }
 
-  //  get Token
-  const token = user.getSignedJWTToken();
-
-  res.status(200).json({
-    success: true,
-    token
-  })
+  //  give response
+  sendResponse(user, 200, res);
 })
 
 // @desc      Get loggedIn user
 // @route     GET /api/v1/auth/me
-// @access    Public
+// @access    Private
 exports.getMe = asyncHandler(async (req, res, next) => {
   const user = await req.user
 
@@ -65,4 +56,90 @@ exports.getMe = asyncHandler(async (req, res, next) => {
     success: true,
     data: user
   })
+})
+
+// @desc      Forgot password
+// @route     POST /api/v1/auth/forgotpassword
+// @access    Public
+exports.forgotpassword = asyncHandler(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email });
+  //  if no user
+  if(!user) {
+    return next(new ErrorResponce(`no user with that email found`, 404));
+  }
+  //  get reset token from model
+  const resetToken = user.getPasswordResetToken();
+  //  save token and expire time in db
+  await user.save({ validateBeforeSave: false });
+  //  create reset url
+  const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/auth/resetpassword/${resetToken}`;
+  //  create mail message
+  const message = `you are getting this mail because you (or someone else) has requested to reset 
+  password of DEV-CAMPER site account, please make PUT request to \n\n ${resetUrl} \n\n Thank you!`;
+
+  try {
+    // await sendMail({
+    //   email: user.email,
+    //   subject: 'reset password',
+    //   message
+    // });
+    //  give response 
+    res.status(200).json({
+      success: true,
+      data: {
+          email: user.email,
+          subject: 'reset password',
+          message
+        }
+    })
+  } catch (err) {
+    return next(new ErrorResponce(`error while sending mail`, 500))
+  }
+})
+
+//  helper function that gets token from model and give it to user through json() + cookie
+const sendResponse = (user, statusCode, res) => {
+  //  get Token
+  const token = user.getSignedJWTToken();
+  //  set cookie options
+  const options = {
+    expires: new Date( Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
+    httpOnly: true
+  }
+  if(process.env.NODE_ENV === 'production') {
+    options.secure = true
+  }
+  //  send response
+  res
+    .status(statusCode)
+    .cookie('token', token, options)
+    .json({
+      success: true,
+      token
+  })
+}
+
+// @desc      Reset Password
+// @route     GET /api/v1/auth/resetpassword/:resettoken
+// @access    Public
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+  const resetPasswordToken = crypto.createHash('sha256').update(req.params.resettoken).digest('hex');
+  //  find user with same reset token and expire time greater
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() }
+  });
+  //  not found
+  if (!user) {
+    return next(new ErrorResponce(`Invalid token`, 400))
+  }
+
+  //  make changes
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  user.password = req.body.password;
+  //  save entry
+  await user.save();
+
+  sendResponse(user, 200, res);
 })
