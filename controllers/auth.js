@@ -2,6 +2,8 @@ const asyncHandler = require("../middlewares/async");
 const crypto = require('crypto');
 const ErrorResponce = require('../utils/errorResponce');
 const User = require('../models/User');
+const sendMail = require('../utils/sendEmail');
+
 
 // @desc      Register user
 // @route     POST /api/v1/auth/register
@@ -114,19 +116,15 @@ exports.forgotpassword = asyncHandler(async (req, res, next) => {
   password of DEV-CAMPER site account, please make PUT request to \n\n ${resetUrl} \n\n Thank you!`;
 
   try {
-    // await sendMail({
-    //   email: user.email,
-    //   subject: 'reset password',
-    //   message
-    // });
+    await sendMail({
+      email: user.email,
+      subject: 'reset password',
+      message
+    });
     //  give response 
     res.status(200).json({
       success: true,
-      data: {
-          email: user.email,
-          subject: 'reset password',
-          message
-        }
+      data: `mail has been sent to our email address with link to reset password`
     })
   } catch (err) {
     return next(new ErrorResponce(`error while sending mail`, 500))
