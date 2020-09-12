@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const mongoSanitize = require('express-mongo-sanitize');
 
 const auth = require('./routes/auth');
 const bootcamps = require("./routes/bootcamps");
@@ -23,6 +24,9 @@ const app = express();
 
 //  use body parser to get data laying in request
 app.use(express.json());
+
+//  sanitize data to prevent NO-SQL injection
+app.use(mongoSanitize());
 
 //  use morgan only if we are running in development mode
 if(process.env.NODE_ENV === 'development') {
