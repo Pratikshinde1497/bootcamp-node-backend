@@ -17,7 +17,7 @@ router.use('/:bootcampId/reviews', reviewRouter);
 router.route('/radius/:zipcode/:distance').get(getBootcampsByRadius);
 
 router.route('/')
-  .get(QueryResponce(Bootcamp, 'courses'), getBootcamps)
+  .get(QueryResponce(Bootcamp, 'courses', 'reviews'), getBootcamps)
   .post(protect, authorize('publisher', 'admin'), pushBootcamp)
 
 router.route('/:id')

@@ -38,4 +38,34 @@ const ReviewSchema = new mongoose.Schema({
 //  prevent user from writing multiple reviews for single bootcamp -- 1 to 1 relation
 ReviewSchema.index({ bootcamp: 1, user: 1 }, { unique: true})
 
+//  calcuate average rating of bootcamp  
+ReviewSchema.statics.averageRating = async function(bootcampId) {
+  const obj = await this.aggregate([
+    {
+      $match: { bootcamp: bootcampId  }
+    },
+    {
+      $group: {
+        _id: '$bootcamp',
+        averageRating: {  $avg: '$rating'  }
+      }
+    }
+  ])
+
+  try {
+    await Bootcamp.findByIdAndUpdate(bootcampId, {
+      averageRating: obj[0].averageRating
+    })
+  } catch (err) {
+    console.error(err);
+  }
+}
+//  before adding new review
+ReviewSchema.post('save', function (next) {
+  this.constructor.averageRating(this.bootcamp);
+})
+//  after removing review
+ReviewSchema.pre('remove', function (next) {
+  this.constructor.averageRating(this.bootcamp);
+})
 module.exports = mongoose.model('Review', ReviewSchema);

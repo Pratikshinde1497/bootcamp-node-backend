@@ -1,4 +1,4 @@
-const QueryResponce = (model, populate) => async(req, res, next) => {
+const QueryResponce = (model, populate, populate1) => async(req, res, next) => {
 
   let query; 
   //  copy req.query 
@@ -45,6 +45,8 @@ const QueryResponce = (model, populate) => async(req, res, next) => {
   let resource = await query;
   if(populate)
     resource = await query.populate(populate);
+  if(populate1)
+    resource = await query.populate(populate1);
 
   if (!resource) {
     next(new ErrorResponce(`no resource found`, 404))

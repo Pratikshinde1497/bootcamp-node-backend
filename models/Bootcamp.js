@@ -72,7 +72,7 @@ const BootcampSchema = new mongoose.Schema({
   averageRating: {
     type: Number,
     min: [1, 'Rating cannot be less than 1'],
-    max: [10, 'Rating cannot be more than 10']
+    max: [5, 'Rating cannot be more than 5']
   },
   averageCost: Number,
   photo: {
@@ -134,7 +134,7 @@ BootcampSchema.pre('save', async function(next) {
   next()
 })
 
-//  reverse populate with virtuals
+//  reverse populate courses with virtuals
 BootcampSchema.virtual('courses', {
   ref: 'Course',
   localField: '_id',
@@ -142,10 +142,19 @@ BootcampSchema.virtual('courses', {
   justOne: false
 })
 
-//  delete courses, when bootcamp is deleted
+//  reverse populate reviews with virtuals
+BootcampSchema.virtual('reviews', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'bootcamp',
+  justOne: false
+})
+
+//  delete courses and reviews, when bootcamp is deleted
 BootcampSchema.pre('remove', async function(next) {
-  console.log(`removing courses of bootcampId ${this.id}`);
   await this.model('Course').deleteMany({ bootcamp: this._id });
+  await this.model('Review').deleteMany({ bootcamp: this._id });
+
   next();
 })
 
